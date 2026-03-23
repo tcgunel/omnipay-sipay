@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Server: nginx
+Content-Type: application/json
+Content-Length: 350
+
+{"status_code":100,"status_description":"Success","data":[{"pos_id":1,"campaign_id":0,"allocation_id":0,"installments_number":1,"card_type":"VISA","card_program":"BONUS","payable_amount":100.00,"hash_key":"test_hash","amount_to_be_paid":"100.00","currency_code":"TRY","currency_id":1,"title":"Test Bank"}]}

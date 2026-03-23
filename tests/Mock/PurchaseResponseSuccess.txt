@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Server: nginx
+Content-Type: application/json
+Content-Length: 250
+
+{"status_code":100,"status_description":"Success","data":{"auth_code":"AUTH123456","invoice_id":"INV-20230101-001","order_id":"ORD-001","transaction_type":"Auth"}}

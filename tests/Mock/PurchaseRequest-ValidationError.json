@@ -1,0 +1,18 @@
+{
+  "appId": "app_id_123",
+  "appSecret": "app_secret_456",
+  "merchantKey": "$2y$10$test.merchant.key",
+
+  "transactionId": "INV-20230101-003",
+  "card": {
+    "firstName": "Example",
+    "lastName": "User",
+    "number": "9792030394440796",
+    "expiryMonth": "12",
+    "expiryYear": "2099",
+    "cvv": "000"
+  },
+  "clientIp": "127.0.0.1",
+  "installment": 1,
+  "secure": false
+}

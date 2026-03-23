@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Server: nginx
+Content-Type: application/json
+Content-Length: 150
+
+{"status_code":100,"status_description":"Refund successful.","data":{"invoice_id":"INV-20230101-001","refund_amount":"50.00"}}

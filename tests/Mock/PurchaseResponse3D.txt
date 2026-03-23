@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Server: nginx
+Content-Type: application/json
+Content-Length: 500
+
+{"status_code":100,"status_description":"Success","data":"<form id=\"three_d_form\" action=\"https://acs.bank.com/3d\" method=\"POST\"><input type=\"hidden\" name=\"PaReq\" value=\"test_pareq\"/><input type=\"hidden\" name=\"TermUrl\" value=\"https://example.com/payment-success\"/></form><script>document.getElementById('three_d_form').submit();</script>"}

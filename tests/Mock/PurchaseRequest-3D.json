@@ -1,0 +1,37 @@
+{
+  "appId": "app_id_123",
+  "appSecret": "app_secret_456",
+  "merchantKey": "$2y$10$test.merchant.key",
+
+  "transactionId": "INV-20230101-002",
+  "amount": "250.50",
+  "currency": "TRY",
+  "card": {
+    "firstName": "Example",
+    "lastName": "User",
+    "number": "9792030394440796",
+    "expiryMonth": "12",
+    "expiryYear": "2099",
+    "cvv": "000",
+    "billingAddress1": "123 Billing St",
+    "billingAddress2": "Billsville",
+    "billingCity": "Billstown",
+    "billingPostcode": "12345",
+    "billingState": "CA",
+    "billingCountry": "TR",
+    "billingPhone": "5554443322"
+  },
+  "clientIp": "192.168.1.1",
+  "items": [
+    {
+      "name": "Premium Product",
+      "description": "A premium test product.",
+      "quantity": 1,
+      "price": 250.50
+    }
+  ],
+  "installment": 3,
+  "secure": true,
+  "returnUrl": "https://example.com/payment-success",
+  "cancelUrl": "https://example.com/payment-failure"
+}

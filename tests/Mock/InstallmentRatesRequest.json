@@ -1,0 +1,6 @@
+{
+  "appId": "app_id_123",
+  "appSecret": "app_secret_456",
+  "merchantKey": "$2y$10$test.merchant.key",
+  "currency": "TRY"
+}

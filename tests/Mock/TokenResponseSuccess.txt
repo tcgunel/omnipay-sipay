@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Server: nginx
+Content-Type: application/json
+Content-Length: 200
+
+{"status_code":100,"status_description":"Success","data":{"token":"test_bearer_token_abc123","is_3d":1,"expires_at":"2023-12-31 23:59:59"}}
