@@ -4,6 +4,6 @@ namespace Omnipay\Sipay\Constants;
 
 class Status
 {
-	const SUCCESS = 100;
-	const ERROR = 0;
+    public const SUCCESS = 100;
+    public const ERROR = 0;
 }

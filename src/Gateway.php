@@ -28,53 +28,53 @@ use Omnipay\Sipay\Traits\PurchaseGettersSetters;
  */
 class Gateway extends AbstractGateway
 {
-	use PurchaseGettersSetters;
+    use PurchaseGettersSetters;
 
-	public function getName(): string
-	{
-		return 'Sipay';
-	}
+    public function getName(): string
+    {
+        return 'Sipay';
+    }
 
-	public function getDefaultParameters()
-	{
-		return [
-			'provider'    => 'sipay',
-			'clientIp'    => '127.0.0.1',
-			'appId'       => '',
-			'appSecret'   => '',
-			'merchantKey' => '',
-			'installment' => 0,
-			'secure'      => false,
-		];
-	}
+    public function getDefaultParameters()
+    {
+        return [
+            'provider' => 'sipay',
+            'clientIp' => '127.0.0.1',
+            'appId' => '',
+            'appSecret' => '',
+            'merchantKey' => '',
+            'installment' => 0,
+            'secure' => false,
+        ];
+    }
 
-	public function purchase(array $options = []): AbstractRequest
-	{
-		return $this->createRequest(PurchaseRequest::class, $options);
-	}
+    public function purchase(array $options = []): AbstractRequest
+    {
+        return $this->createRequest(PurchaseRequest::class, $options);
+    }
 
-	public function completePurchase(array $options = []): AbstractRequest
-	{
-		return $this->createRequest(CompletePurchaseRequest::class, $options);
-	}
+    public function completePurchase(array $options = []): AbstractRequest
+    {
+        return $this->createRequest(CompletePurchaseRequest::class, $options);
+    }
 
-	public function void(array $options = []): AbstractRequest
-	{
-		return $this->createRequest(VoidRequest::class, $options);
-	}
+    public function void(array $options = []): AbstractRequest
+    {
+        return $this->createRequest(VoidRequest::class, $options);
+    }
 
-	public function refund(array $options = []): AbstractRequest
-	{
-		return $this->createRequest(RefundRequest::class, $options);
-	}
+    public function refund(array $options = []): AbstractRequest
+    {
+        return $this->createRequest(RefundRequest::class, $options);
+    }
 
-	public function binLookup(array $options = []): AbstractRequest
-	{
-		return $this->createRequest(BinLookupRequest::class, $options);
-	}
+    public function binLookup(array $options = []): AbstractRequest
+    {
+        return $this->createRequest(BinLookupRequest::class, $options);
+    }
 
-	public function installmentRates(array $options = []): AbstractRequest
-	{
-		return $this->createRequest(InstallmentRatesRequest::class, $options);
-	}
+    public function installmentRates(array $options = []): AbstractRequest
+    {
+        return $this->createRequest(InstallmentRatesRequest::class, $options);
+    }
 }

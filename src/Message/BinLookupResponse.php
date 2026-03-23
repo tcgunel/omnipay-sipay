@@ -9,57 +9,57 @@ use Psr\Http\Message\ResponseInterface;
 
 class BinLookupResponse extends AbstractResponse
 {
-	protected $response;
+    protected $response;
 
-	protected $request;
+    protected $request;
 
-	public function __construct(RequestInterface $request, $data)
-	{
-		parent::__construct($request, $data);
+    public function __construct(RequestInterface $request, $data)
+    {
+        parent::__construct($request, $data);
 
-		$this->request = $request;
+        $this->request = $request;
 
-		$this->response = $data;
+        $this->response = $data;
 
-		if ($data instanceof ResponseInterface) {
+        if ($data instanceof ResponseInterface) {
 
-			$body = (string) $data->getBody();
+            $body = (string) $data->getBody();
 
-			try {
+            try {
 
-				$this->response = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+                $this->response = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
 
-			} catch (JsonException $e) {
+            } catch (JsonException $e) {
 
-				$this->response = [
-					'status_code'        => 0,
-					'status_description' => $body,
-				];
+                $this->response = [
+                    'status_code' => 0,
+                    'status_description' => $body,
+                ];
 
-			}
-		}
-	}
+            }
+        }
+    }
 
-	public function isSuccessful(): bool
-	{
-		return isset($this->response['status_code'])
-			&& (int) $this->response['status_code'] === 100;
-	}
+    public function isSuccessful(): bool
+    {
+        return isset($this->response['status_code'])
+            && (int) $this->response['status_code'] === 100;
+    }
 
-	public function getMessage(): ?string
-	{
-		return $this->response['status_description'] ?? null;
-	}
+    public function getMessage(): ?string
+    {
+        return $this->response['status_description'] ?? null;
+    }
 
-	public function getCode(): ?string
-	{
-		return isset($this->response['status_code'])
-			? (string) $this->response['status_code']
-			: null;
-	}
+    public function getCode(): ?string
+    {
+        return isset($this->response['status_code'])
+            ? (string) $this->response['status_code']
+            : null;
+    }
 
-	public function getData()
-	{
-		return $this->response;
-	}
+    public function getData()
+    {
+        return $this->response;
+    }
 }

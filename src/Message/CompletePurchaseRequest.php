@@ -2,38 +2,36 @@
 
 namespace Omnipay\Sipay\Message;
 
-use Omnipay\Sipay\Helpers\Helper;
-
 class CompletePurchaseRequest extends RemoteAbstractRequest
 {
-	/**
-	 * @throws \Omnipay\Common\Exception\InvalidRequestException
-	 */
-	public function getData()
-	{
-		$this->validateAll();
+    /**
+     * @throws \Omnipay\Common\Exception\InvalidRequestException
+     */
+    public function getData()
+    {
+        $this->validateAll();
 
-		// The data comes from the 3D POST callback
-		$data = $this->httpRequest->request->all();
+        // The data comes from the 3D POST callback
+        $data = $this->httpRequest->request->all();
 
-		return $data;
-	}
+        return $data;
+    }
 
-	/**
-	 * @throws \Omnipay\Common\Exception\InvalidRequestException
-	 */
-	protected function validateAll(): void
-	{
-		$this->validateSettings();
-	}
+    /**
+     * @throws \Omnipay\Common\Exception\InvalidRequestException
+     */
+    protected function validateAll(): void
+    {
+        $this->validateSettings();
+    }
 
-	public function sendData($data)
-	{
-		return $this->createResponse($data);
-	}
+    public function sendData($data)
+    {
+        return $this->createResponse($data);
+    }
 
-	protected function createResponse($data): CompletePurchaseResponse
-	{
-		return $this->response = new CompletePurchaseResponse($this, $data);
-	}
+    protected function createResponse($data): CompletePurchaseResponse
+    {
+        return $this->response = new CompletePurchaseResponse($this, $data);
+    }
 }

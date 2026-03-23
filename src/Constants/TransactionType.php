@@ -4,5 +4,5 @@ namespace Omnipay\Sipay\Constants;
 
 class TransactionType
 {
-	const AUTH = 'Auth';
+    public const AUTH = 'Auth';
 }
