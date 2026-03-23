@@ -4,6 +4,16 @@ namespace Omnipay\Sipay\Traits;
 
 trait PurchaseGettersSetters
 {
+	public function getProvider()
+	{
+		return $this->getParameter('provider');
+	}
+
+	public function setProvider($value)
+	{
+		return $this->setParameter('provider', strtolower($value));
+	}
+
 	public function getAppId()
 	{
 		return $this->getParameter('appId');

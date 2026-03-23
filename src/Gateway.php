@@ -38,6 +38,7 @@ class Gateway extends AbstractGateway
 	public function getDefaultParameters()
 	{
 		return [
+			'provider'    => 'sipay',
 			'clientIp'    => '127.0.0.1',
 			'appId'       => '',
 			'appSecret'   => '',

@@ -4,6 +4,7 @@ namespace Omnipay\Sipay\Message;
 
 use Omnipay\Common\Exception\InvalidRequestException;
 use Omnipay\Common\Message\AbstractRequest;
+use Omnipay\Sipay\Constants\Provider;
 use Omnipay\Sipay\Helpers\Helper;
 use Omnipay\Sipay\Traits\PurchaseGettersSetters;
 
@@ -29,15 +30,13 @@ abstract class RemoteAbstractRequest extends AbstractRequest
 	}
 
 	/**
-	 * Resolve the base endpoint depending on test mode.
+	 * Resolve the base endpoint depending on provider and test mode.
 	 */
 	protected function getBaseEndpoint(): string
 	{
-		if ($this->getTestMode()) {
-			return 'https://provisioning.sipay.com.tr/ccpayment';
-		}
+		$provider = $this->getProvider() ?? Provider::SIPAY;
 
-		return 'https://app.sipay.com.tr/ccpayment';
+		return Provider::getBaseUrl($provider, (bool) $this->getTestMode());
 	}
 
 	/**

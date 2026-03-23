@@ -24,11 +24,35 @@ use Omnipay\Omnipay;
 
 $gateway = Omnipay::create('Sipay');
 
-$gateway->setAppId('your_app_id');           // app_id from Sipay
-$gateway->setAppSecret('your_app_secret');   // app_secret from Sipay
-$gateway->setMerchantKey('your_merchant_key'); // merchant_key from Sipay
+$gateway->setAppId('your_app_id');           // app_id from provider
+$gateway->setAppSecret('your_app_secret');   // app_secret from provider
+$gateway->setMerchantKey('your_merchant_key'); // merchant_key from provider
 $gateway->setTestMode(true);                 // Use test endpoint
 ```
+
+## Provider Selection
+
+This package supports multiple CCPayment providers that share the same API protocol. By default, the provider is set to `sipay`. You can switch to any supported provider:
+
+```php
+$gateway->setProvider('paybull');   // Use Paybull endpoints
+$gateway->setProvider('qnbpay');   // Use QNBPay endpoints
+$gateway->setProvider('halkode');  // Use Halkode endpoints
+```
+
+### Supported Providers
+
+| Provider | Test Endpoint | Live Endpoint |
+|----------|---------------|---------------|
+| `sipay` (default) | `https://provisioning.sipay.com.tr/ccpayment` | `https://app.sipay.com.tr/ccpayment` |
+| `halkode` | `https://testapp.halkode.com.tr/ccpayment` | `https://app.halkode.com.tr/ccpayment` |
+| `iqmoney` | `https://provisioning.iqmoneytr.com/ccpayment` | `https://app.iqmoneytr.com/ccpayment` |
+| `parolapara` | `https://testccpayment.parolapara.com/ccpayment` | `https://ccpayment.parolapara.com/ccpayment` |
+| `paybull` | `https://test.paybull.com/ccpayment` | `https://app.paybull.com/ccpayment` |
+| `qnbpay` | `https://test.qnbpay.com.tr/ccpayment` | `https://portal.qnbpay.com.tr/ccpayment` |
+| `vepara` | `https://test.vepara.com.tr/ccpayment` | `https://app.vepara.com.tr/ccpayment` |
+
+The provider name is case-insensitive. All providers use the same API methods (purchase, refund, void, etc.).
 
 ## Supported Methods
 
@@ -141,10 +165,7 @@ if ($response->isSuccessful()) {
 
 ## Endpoints
 
-| Environment | Base URL |
-|-------------|----------|
-| Test | `https://provisioning.sipay.com.tr/ccpayment` |
-| Live | `https://app.sipay.com.tr/ccpayment` |
+Endpoints are automatically resolved based on the selected provider and test mode. See the [Provider Selection](#provider-selection) section above for the full list of endpoints.
 
 ## Authentication
 
