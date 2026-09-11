@@ -42,6 +42,34 @@ class PurchaseTest extends TestCase
     }
 
     /**
+     * QNBPay's API is .NET and binds expiry_month/expiry_year to System.String.
+     * Omnipay's CreditCard hands back ints, which JSON-encode as bare numbers
+     * and fail model binding there with "The JSON value could not be converted
+     * to System.String" - and then, confusingly, "The request field is
+     * required." for the whole body.
+     *
+     * @throws \JsonException
+     */
+    public function test_expiry_date_is_sent_as_a_zero_padded_string()
+    {
+        $options = file_get_contents(__DIR__ . '/../Mock/PurchaseRequest.json');
+
+        $options = json_decode($options, true, 512, JSON_THROW_ON_ERROR);
+
+        $options['card']['expiryMonth'] = 1;
+        $options['card']['expiryYear'] = 2028;
+
+        $request = new PurchaseRequest($this->getHttpClient(), $this->getHttpRequest());
+
+        $request->initialize($options);
+
+        $data = $request->getData();
+
+        $this->assertSame('01', $data['expiry_month']);
+        $this->assertSame('2028', $data['expiry_year']);
+    }
+
+    /**
      * @throws \JsonException
      */
     public function test_purchase_3d_request()

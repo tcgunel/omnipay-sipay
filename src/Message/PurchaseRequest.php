@@ -35,8 +35,8 @@ class PurchaseRequest extends RemoteAbstractRequest
         $data = [
             'cc_holder_name' => $this->get_card('getName'),
             'cc_no' => $this->get_card('getNumber'),
-            'expiry_month' => $this->get_card('getExpiryMonth'),
-            'expiry_year' => $this->get_card('getExpiryYear'),
+            'expiry_month' => $this->expiryMonth(),
+            'expiry_year' => $this->expiryYear(),
             'cvv' => $this->get_card('getCvv'),
             'currency_code' => $this->getCurrency(),
             'installments_number' => $this->getInstallment() ?? 0,
@@ -63,6 +63,28 @@ class PurchaseRequest extends RemoteAbstractRequest
         }
 
         return $data;
+    }
+
+    /**
+     * Omnipay's CreditCard casts the expiry date to int, which JSON-encodes as a
+     * bare number. The PHP-based providers coerce it back, but QNBPay's API is
+     * .NET and binds expiry_month to System.String - a number there fails model
+     * binding outright, and the whole body then comes back as
+     * "The request field is required." Zero-padded strings are also what the
+     * Sipay documentation shows, so this is the correct wire format everywhere.
+     */
+    protected function expiryMonth(): ?string
+    {
+        $month = $this->get_card('getExpiryMonth');
+
+        return $month === null ? null : str_pad((string) $month, 2, '0', STR_PAD_LEFT);
+    }
+
+    protected function expiryYear(): ?string
+    {
+        $year = $this->get_card('getExpiryYear');
+
+        return $year === null ? null : (string) $year;
     }
 
     /**
