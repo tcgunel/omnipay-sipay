@@ -132,15 +132,42 @@ class Helper
     }
 
     /**
-     * Validate hash key from a 3D response by decrypting and checking invoice_id.
+     * Build a hash_key in the 3D CALLBACK shape
      *
-     * @param string $hashKey
-     * @param string $appSecret
-     * @param string $invoiceId
-     * @return bool
+     *   status|total|invoice_id|order_id|currency_code
+     *
+     * Sipay produces these; we only ever verify them. Exposed so that tests and
+     * gateway fakes can produce a callback this package will accept.
+     */
+    public static function generateCallbackHashKey(
+        string $status,
+        string $total,
+        string $invoiceId,
+        string $orderId,
+        string $currencyCode,
+        string $appSecret
+    ): string {
+        $data = $status . '|' . $total . '|' . $invoiceId . '|' . $orderId . '|' . $currencyCode;
+
+        $iv = substr(sha1(random_bytes(16)), 0, 16);
+        $password = sha1($appSecret);
+        $salt = substr(sha1(random_bytes(16)), 0, 4);
+        $saltWithPassword = hash('sha256', $password . $salt);
+
+        $encrypted = openssl_encrypt($data, 'aes-256-cbc', substr($saltWithPassword, 0, 32), 0, $iv);
+
+        return str_replace('/', '__', $iv . ':' . $salt . ':' . $encrypted);
+    }
+
+    /**
+     * Decrypt a hash_key into its pipe-separated payload.
+     *
+     * Shared by both hash shapes; it proves only that the key was produced with
+     * this appSecret, never what the fields mean.
+     *
      * @throws OmnipaySipayHashValidationException
      */
-    public static function validateHashKey(string $hashKey, string $appSecret, string $invoiceId): bool
+    public static function decryptHashKey(string $hashKey, string $appSecret): string
     {
         $hashKey = str_replace('__', '/', $hashKey);
 
@@ -166,6 +193,75 @@ class Helper
         if ($decrypted === false) {
             throw new OmnipaySipayHashValidationException('Hash key decryption failed.');
         }
+
+        return $decrypted;
+    }
+
+    /**
+     * Validate the hash_key posted back by the 3D callback.
+     *
+     * This is a DIFFERENT payload from the one we send with a purchase. The
+     * callback's hash decrypts to
+     *
+     *   status|total|invoice_id|order_id|currency_code
+     *
+     * e.g. "1|1412.00|6aa3d20689242|63924728630942896449049|TRY", where the
+     * request's is total|installment|currency_code|merchant_key|invoice_id.
+     * Reading the callback with the request's layout puts the currency code
+     * where the invoice id is expected, so every callback failed validation -
+     * and an approved, charged payment was reported back to the shop as a
+     * decline.
+     *
+     * @return array{status: string, total: string, invoice_id: string, order_id: string, currency_code: string}
+     *
+     * @throws OmnipaySipayHashValidationException
+     */
+    public static function validateCallbackHashKey(string $hashKey, string $appSecret, string $invoiceId): array
+    {
+        $decrypted = self::decryptHashKey($hashKey, $appSecret);
+
+        $parts = explode('|', $decrypted);
+
+        if (count($parts) < 5) {
+            throw new OmnipaySipayHashValidationException('Invalid callback hash key data format.');
+        }
+
+        [$status, $total, $decryptedInvoiceId, $orderId, $currencyCode] = $parts;
+
+        // The whole point of the hash: the callback names the order it settles,
+        // so another order's callback cannot be replayed onto this one.
+        if ($decryptedInvoiceId !== $invoiceId) {
+            throw new OmnipaySipayHashValidationException(
+                'Hash key invoice_id mismatch. Expected: ' . $invoiceId . ', Got: ' . $decryptedInvoiceId
+            );
+        }
+
+        return [
+            'status' => $status,
+            'total' => $total,
+            'invoice_id' => $decryptedInvoiceId,
+            'order_id' => $orderId,
+            'currency_code' => $currencyCode,
+        ];
+    }
+
+    /**
+     * Validate a hash key built with generateHashKey(), i.e. the REQUEST shape
+     *
+     *   total|installment|currency_code|merchant_key|invoice_id
+     *
+     * The 3D callback posts a different payload - use validateCallbackHashKey()
+     * for that.
+     *
+     * @param string $hashKey
+     * @param string $appSecret
+     * @param string $invoiceId
+     * @return bool
+     * @throws OmnipaySipayHashValidationException
+     */
+    public static function validateHashKey(string $hashKey, string $appSecret, string $invoiceId): bool
+    {
+        $decrypted = self::decryptHashKey($hashKey, $appSecret);
 
         $dataParts = explode('|', $decrypted);
 

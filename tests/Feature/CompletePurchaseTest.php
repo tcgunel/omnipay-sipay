@@ -25,12 +25,12 @@ class CompletePurchaseTest extends TestCase
             'status_description' => 'Success',
             'invoice_id' => 'INV-20230101-002',
             'order_id' => 'ORD-002',
-            'hash_key' => Helper::generateHashKey(
+            'hash_key' => Helper::generateCallbackHashKey(
+                '1',
                 '250.50',
-                3,
-                'TRY',
-                '$2y$10$test.merchant.key',
                 'INV-20230101-002',
+                'ORD-002',
+                'TRY',
                 'app_secret_456'
             ),
         ]);
@@ -43,12 +43,12 @@ class CompletePurchaseTest extends TestCase
 
     public function test_complete_purchase_response_success()
     {
-        $hashKey = Helper::generateHashKey(
+        $hashKey = Helper::generateCallbackHashKey(
+            '1',
             '250.50',
-            3,
-            'TRY',
-            '$2y$10$test.merchant.key',
             'INV-20230101-002',
+            'ORD-002',
+            'TRY',
             'app_secret_456'
         );
 
@@ -100,12 +100,12 @@ class CompletePurchaseTest extends TestCase
 
     public function test_complete_purchase_response_failed_status()
     {
-        $hashKey = Helper::generateHashKey(
+        $hashKey = Helper::generateCallbackHashKey(
+            '1',
             '250.50',
-            3,
-            'TRY',
-            '$2y$10$test.merchant.key',
             'INV-20230101-002',
+            'ORD-002',
+            'TRY',
             'app_secret_456'
         );
 
@@ -126,5 +126,103 @@ class CompletePurchaseTest extends TestCase
         $response = new CompletePurchaseResponse($request, $data);
 
         $this->assertFalse($response->isSuccessful());
+    }
+
+    /**
+     * The regression that cost a real, charged payment: a callback hash carries
+     *   status|total|invoice_id|order_id|currency_code
+     * and was being read with the request's layout, which put the currency code
+     * where the invoice id was expected. Every approved 3D payment came back as
+     * a decline, and the caller voided the order the bank had already charged.
+     */
+    public function test_a_callback_hash_is_not_read_with_the_request_layout()
+    {
+        $callbackHash = Helper::generateCallbackHashKey(
+            '1',
+            '1412.00',
+            '6aa3d20689242',
+            '63924728630942896449049',
+            'TRY',
+            'app_secret_456'
+        );
+
+        $this->assertSame(
+            '1|1412.00|6aa3d20689242|63924728630942896449049|TRY',
+            Helper::decryptHashKey($callbackHash, 'app_secret_456')
+        );
+
+        $decoded = Helper::validateCallbackHashKey($callbackHash, 'app_secret_456', '6aa3d20689242');
+
+        $this->assertSame('6aa3d20689242', $decoded['invoice_id']);
+        $this->assertSame('1412.00', $decoded['total']);
+        $this->assertSame('63924728630942896449049', $decoded['order_id']);
+    }
+
+    /**
+     * The POST body is attacker-reachable and the hash is not, so where both
+     * name the same field they have to agree.
+     */
+    public function test_a_posted_order_id_that_contradicts_the_hash_is_rejected()
+    {
+        $options = json_decode(
+            file_get_contents(__DIR__ . '/../Mock/CompletePurchaseRequest.json'),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
+
+        $request = new CompletePurchaseRequest($this->getHttpClient(), $this->getHttpRequest());
+        $request->initialize($options);
+
+        $response = new CompletePurchaseResponse($request, [
+            'status_code' => 100,
+            'status_description' => 'Success',
+            'invoice_id' => 'INV-20230101-002',
+            'order_id' => 'SOMEONE-ELSES-ORDER',
+            'hash_key' => Helper::generateCallbackHashKey(
+                '1',
+                '250.50',
+                'INV-20230101-002',
+                'ORD-002',
+                'TRY',
+                'app_secret_456'
+            ),
+        ]);
+
+        $this->assertFalse($response->isHashValid());
+        $this->assertFalse($response->isSuccessful());
+    }
+
+    /**
+     * A hash naming a different invoice must not settle this one.
+     */
+    public function test_another_orders_callback_cannot_be_replayed()
+    {
+        $options = json_decode(
+            file_get_contents(__DIR__ . '/../Mock/CompletePurchaseRequest.json'),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
+
+        $request = new CompletePurchaseRequest($this->getHttpClient(), $this->getHttpRequest());
+        $request->initialize($options);
+
+        $response = new CompletePurchaseResponse($request, [
+            'status_code' => 100,
+            'invoice_id' => 'INV-20230101-002',
+            'order_id' => 'ORD-002',
+            'hash_key' => Helper::generateCallbackHashKey(
+                '1',
+                '250.50',
+                'SOME-OTHER-INVOICE',
+                'ORD-002',
+                'TRY',
+                'app_secret_456'
+            ),
+        ]);
+
+        $this->assertFalse($response->isHashValid());
+        $this->assertNull($response->getCallbackData());
     }
 }
