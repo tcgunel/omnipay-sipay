@@ -149,4 +149,65 @@ class PurchaseTest extends TestCase
         $this->assertNotNull($response->getRedirectHtml());
         $this->assertStringContainsString('<form', $response->getRedirectHtml());
     }
+
+    /**
+     * What paySmart3D actually answers with: not JSON at all, but a complete
+     * self-submitting HTML page. Before this was recognised the caller saw a
+     * non-redirect response, voided the order and dumped the bank's page into
+     * the checkout as if it were an error message.
+     */
+    public function test_raw_html_3d_page_is_a_redirect()
+    {
+        $httpResponse = $this->getMockHttpResponse('PurchaseResponse3D-Html.txt');
+
+        $response = new PurchaseResponse($this->getMockRequest(), $httpResponse);
+
+        $this->assertTrue($response->isRedirect());
+        $this->assertFalse($response->isSuccessful());
+        $this->assertStringContainsString('acs.bank.com', $response->getRedirectHtml());
+        $this->assertStringContainsString(
+            'acs.bank.com',
+            $response->getRedirectResponse()->getContent()
+        );
+    }
+
+    /**
+     * Sipay wraps refusals in the same shape, posting the reason back to the
+     * merchant's own cancel_url. That is still a redirect: the order has to
+     * survive long enough for the failure page to read status_description off
+     * the POST.
+     */
+    public function test_raw_html_refusal_is_also_a_redirect()
+    {
+        $httpResponse = $this->getMockHttpResponse('PurchaseResponse3D-HtmlError.txt');
+
+        $response = new PurchaseResponse($this->getMockRequest(), $httpResponse);
+
+        $this->assertTrue($response->isRedirect());
+        $this->assertFalse($response->isSuccessful());
+        $this->assertStringContainsString('payment-failure', $response->getRedirectResponse()->getContent());
+    }
+
+    /**
+     * A plain-text body with no form is not a redirect - falling back to the
+     * parent would try to build one out of an empty URL.
+     */
+    public function test_non_html_body_is_not_a_redirect()
+    {
+        $body = 'Service Unavailable';
+
+        $raw = "HTTP/1.1 503 Service Unavailable\r\nContent-Type: text/plain\r\n"
+            . 'Content-Length: ' . strlen($body) . "\r\n\r\n" . $body;
+
+        file_put_contents($file = sys_get_temp_dir() . '/SipayPlainText.txt', $raw);
+
+        $httpResponse = \GuzzleHttp\Psr7\Message::parseResponse(file_get_contents($file));
+
+        $response = new PurchaseResponse($this->getMockRequest(), $httpResponse);
+
+        $this->assertFalse($response->isRedirect());
+        $this->assertNull($response->getRedirectHtml());
+
+        unlink($file);
+    }
 }

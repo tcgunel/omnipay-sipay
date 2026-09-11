@@ -7,6 +7,7 @@ use Omnipay\Common\Message\AbstractResponse;
 use Omnipay\Common\Message\RedirectResponseInterface;
 use Omnipay\Common\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class PurchaseResponse extends AbstractResponse implements RedirectResponseInterface
 {
@@ -15,6 +16,8 @@ class PurchaseResponse extends AbstractResponse implements RedirectResponseInter
     protected $request;
 
     protected bool $is3D = false;
+
+    protected ?string $html = null;
 
     public function __construct(RequestInterface $request, $data)
     {
@@ -41,11 +44,19 @@ class PurchaseResponse extends AbstractResponse implements RedirectResponseInter
 
             } catch (JsonException $e) {
 
-                // If it's raw HTML (3D redirect), store as-is
+                // paySmart3D answers with a whole HTML page rather than JSON, for
+                // both outcomes: on success the form posts the shopper to the
+                // bank's ACS, on refusal it posts the error straight back to the
+                // merchant's cancel_url. Either way it is a redirect - the caller
+                // must render it and must not treat it as a finished transaction.
                 $this->response = [
                     'status_code' => 0,
                     'status_description' => $body,
                 ];
+
+                $this->html = $body;
+
+                $this->is3D = str_contains($body, '<form');
 
             }
         }
@@ -86,11 +97,31 @@ class PurchaseResponse extends AbstractResponse implements RedirectResponseInter
      */
     public function getRedirectHtml(): ?string
     {
-        if ($this->is3D && isset($this->response['data'])) {
-            return $this->response['data'];
+        if (! $this->is3D) {
+            return null;
         }
 
-        return null;
+        if ($this->html !== null) {
+            return $this->html;
+        }
+
+        return $this->response['data'] ?? null;
+    }
+
+    /**
+     * Sipay hands back a complete, self-submitting HTML document, so there is no
+     * URL or field set to rebuild a form from - the parent's implementation would
+     * fail validateRedirect() on the empty redirect URL. Serve the page as it came.
+     */
+    public function getRedirectResponse()
+    {
+        $html = $this->getRedirectHtml();
+
+        if ($html === null) {
+            return parent::getRedirectResponse();
+        }
+
+        return new HttpResponse($html);
     }
 
     public function getMessage(): ?string

@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Server: nginx
+Content-Type: text/html; charset=UTF-8
+Content-Length: 471
+
+<html><head><script type='text/javascript'>function hideAndSubmit(f){document.getElementById(f).submit();}</script></head><body onload="hideAndSubmit('redirectForm')"><form id='redirectForm' action='https://acs.bank.com/3d' method='POST'><input type='hidden' name='PaReq' value='test_pareq'/><input type='hidden' name='TermUrl' value='https://example.com/payment-success'/><input type='submit' name='submitBtn' value='Please click here to continue'/></form></body></html>

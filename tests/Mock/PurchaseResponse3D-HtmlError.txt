@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Server: nginx
+Content-Type: text/html; charset=UTF-8
+Content-Length: 467
+
+<html><body onload="hideAndSubmitTimed('redirectForm')"><form id='redirectForm' action='https://example.com/payment-failure' method='POST'><input type='hidden' name='invoice_id' value='INV-20230101-001'/><input type='hidden' name='error_code' value='13'/><input type='hidden' name='status_code' value='13'/><input type='hidden' name='status_description' value='The total of your items price(1486.00) is not equal to the invoice total(1412.00).'/></form></body></html>
