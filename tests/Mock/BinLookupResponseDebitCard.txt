@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Server: nginx
+Content-Type: application/json
+Content-Length: 500
+
+{"data":[{"pos_id":4,"campaign_id":0,"allocation_id":0,"installments_number":1,"card_type":"DEBIT_CARD","card_program":"CardFinans DC","card_scheme":"MASTER_CARD","card_is_commercial":false,"payable_amount":121.2,"hash_key":"test_hash","amount_to_be_paid":"121.20","currency_code":"TRY","currency_id":1,"title":"Single payment","merchant_fee":4.1087,"card_bank_id":"111","card_bank_name":"QNB BANK A.S."}],"status_code":100,"status_description":"Success"}
