@@ -56,6 +56,21 @@ class HelperTest extends TestCase
         $this->assertEquals($hashKey1, $hashKey2);
     }
 
+    public function test_generate_refund_hash_key_returns_refund_layout()
+    {
+        $hashKey = Helper::generateRefundHashKey(
+            '50.00',
+            'INV-001',
+            'test_merchant_key',
+            'app_secret'
+        );
+
+        $this->assertEquals(
+            '50.00|INV-001|test_merchant_key',
+            Helper::decryptHashKey($hashKey, 'app_secret')
+        );
+    }
+
     public function test_validate_hash_key_success()
     {
         $hashKey = Helper::generateHashKey(

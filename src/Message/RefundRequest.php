@@ -23,14 +23,13 @@ class RefundRequest extends RemoteAbstractRequest
             'app_id' => $this->getAppId(),
             'app_secret' => $this->getAppSecret(),
             'merchant_key' => $this->getMerchantKey(),
-            'hash_key' => Helper::generateHashKey(
-                $this->getAmount(),
-                0,
-                $this->getCurrency() ?? 'TRY',
+            'hash_key' => Helper::generateRefundHashKey(
+                (string) $this->getAmount(),
+                (string) $invoiceId,
                 $this->getMerchantKey(),
-                $invoiceId,
                 $this->getAppSecret()
             ),
+            'refund_transaction_id' => '',
         ];
 
         return $data;

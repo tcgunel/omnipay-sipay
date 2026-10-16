@@ -70,9 +70,64 @@ class Helper
     ): string {
         $data = $total . '|' . $installment . '|' . $currencyCode . '|' . $merchantKey . '|' . $invoiceId;
 
-        $iv = substr(sha1(random_bytes(16)), 0, 16);
+        return self::encryptHashData($data, $appSecret);
+    }
+
+    /**
+     * Generate the hash key for the refund endpoint (`/api/refund`, which also
+     * serves same-day voids).
+     *
+     * The refund endpoint authenticates a DIFFERENT payload from the purchase:
+     *
+     *   amount|invoice_id|merchant_key
+     *
+     * Reusing the purchase layout here sends
+     * "50.00|0|TRY|merchant_key|invoice_id" and is rejected live with status
+     * code 68, "Geçersiz hash anahtarı" (verified against the Sipay test
+     * environment).
+     *
+     * @param string $amount The same value sent as "amount" ("0" for a void).
+     * @param string $invoiceId
+     * @param string $merchantKey
+     * @param string $appSecret
+     * @return string
+     */
+    public static function generateRefundHashKey(
+        string $amount,
+        string $invoiceId,
+        string $merchantKey,
+        string $appSecret
+    ): string {
+        $data = $amount . '|' . $invoiceId . '|' . $merchantKey;
+
+        return self::encryptHashData($data, $appSecret);
+    }
+
+    /**
+     * Encrypt one hash payload with Sipay's AES-256-CBC scheme and a fresh
+     * IV/salt pair.
+     */
+    private static function encryptHashData(string $data, string $appSecret): string
+    {
+        return self::encryptHashDataWith(
+            $data,
+            $appSecret,
+            substr(sha1(random_bytes(16)), 0, 16),
+            substr(sha1(random_bytes(16)), 0, 4)
+        );
+    }
+
+    /**
+     * Encrypt one hash payload with an explicit IV and salt.
+     *
+     * password = sha1(appSecret)
+     * saltWithPassword = sha256(password + salt)
+     * encrypted = AES-256-CBC(data, saltWithPassword.substr(0,32), iv)
+     * hashKey = iv + ":" + salt + ":" + base64(encrypted)  // replace "/" with "__"
+     */
+    private static function encryptHashDataWith(string $data, string $appSecret, string $iv, string $salt): string
+    {
         $password = sha1($appSecret);
-        $salt = substr(sha1(random_bytes(16)), 0, 4);
         $saltWithPassword = hash('sha256', $password . $salt);
 
         $encrypted = openssl_encrypt(
@@ -83,10 +138,7 @@ class Helper
             $iv
         );
 
-        $hashKey = $iv . ':' . $salt . ':' . $encrypted;
-        $hashKey = str_replace('/', '__', $hashKey);
-
-        return $hashKey;
+        return str_replace('/', '__', $iv . ':' . $salt . ':' . $encrypted);
     }
 
     /**
@@ -114,21 +166,7 @@ class Helper
     ): string {
         $data = $total . '|' . $installment . '|' . $currencyCode . '|' . $merchantKey . '|' . $invoiceId;
 
-        $password = sha1($appSecret);
-        $saltWithPassword = hash('sha256', $password . $salt);
-
-        $encrypted = openssl_encrypt(
-            $data,
-            'aes-256-cbc',
-            substr($saltWithPassword, 0, 32),
-            0,
-            $iv
-        );
-
-        $hashKey = $iv . ':' . $salt . ':' . $encrypted;
-        $hashKey = str_replace('/', '__', $hashKey);
-
-        return $hashKey;
+        return self::encryptHashDataWith($data, $appSecret, $iv, $salt);
     }
 
     /**

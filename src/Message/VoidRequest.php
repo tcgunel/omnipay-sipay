@@ -23,14 +23,13 @@ class VoidRequest extends RemoteAbstractRequest
             'app_id' => $this->getAppId(),
             'app_secret' => $this->getAppSecret(),
             'merchant_key' => $this->getMerchantKey(),
-            'hash_key' => Helper::generateHashKey(
+            'hash_key' => Helper::generateRefundHashKey(
                 '0',
-                0,
-                $this->getCurrency() ?? 'TRY',
+                (string) $invoiceId,
                 $this->getMerchantKey(),
-                $invoiceId,
                 $this->getAppSecret()
             ),
+            'refund_transaction_id' => '',
         ];
 
         return $data;

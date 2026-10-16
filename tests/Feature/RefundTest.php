@@ -3,6 +3,7 @@
 namespace Omnipay\Sipay\Tests\Feature;
 
 use Omnipay\Common\Exception\InvalidRequestException;
+use Omnipay\Sipay\Helpers\Helper;
 use Omnipay\Sipay\Message\RefundRequest;
 use Omnipay\Sipay\Message\RefundResponse;
 use Omnipay\Sipay\Tests\TestCase;
@@ -29,7 +30,15 @@ class RefundTest extends TestCase
         $this->assertEquals('app_id_123', $data['app_id']);
         $this->assertEquals('app_secret_456', $data['app_secret']);
         $this->assertEquals('$2y$10$test.merchant.key', $data['merchant_key']);
-        $this->assertNotEmpty($data['hash_key']);
+        $this->assertEquals('', $data['refund_transaction_id']);
+
+        // The refund endpoint authenticates a different payload than the
+        // purchase — amount|invoice_id|merchant_key. Sending the purchase
+        // layout here is rejected live with code 68, "Geçersiz hash anahtarı".
+        $this->assertEquals(
+            '50.00|INV-20230101-001|$2y$10$test.merchant.key',
+            Helper::decryptHashKey($data['hash_key'], 'app_secret_456')
+        );
     }
 
     public function test_refund_request_validation_error()
