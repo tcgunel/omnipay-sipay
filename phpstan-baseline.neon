@@ -21,16 +21,6 @@ parameters:
 			path: src/Message/PurchaseResponse.php
 
 		-
-			message: "#^Expression on left side of \\?\\? is not nullable\\.$#"
-			count: 1
-			path: src/Message/RefundRequest.php
-
-		-
 			message: "#^Ternary operator condition is always true\\.$#"
 			count: 1
 			path: src/Message/RemoteAbstractRequest.php
-
-		-
-			message: "#^Expression on left side of \\?\\? is not nullable\\.$#"
-			count: 1
-			path: src/Message/VoidRequest.php
