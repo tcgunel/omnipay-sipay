@@ -28,23 +28,7 @@ class CompletePurchaseResponse extends AbstractResponse
 
         $this->response = $data;
 
-        // The callback's hash_key is the only part of this POST we can trust: it
-        // is encrypted with the appSecret and names the invoice it settles.
-        if (isset($data['hash_key']) && $request instanceof CompletePurchaseRequest) {
-            try {
-                $this->callback = Helper::validateCallbackHashKey(
-                    $data['hash_key'],
-                    $request->getAppSecret(),
-                    $data['invoice_id'] ?? ''
-                );
-
-                $this->hashValid = $this->amountMatchesHash($data);
-
-            } catch (OmnipaySipayHashValidationException $e) {
-                $this->hashValid = false;
-                $this->callback = null;
-            }
-        }
+        $this->hashValid = $this->verifyHash($request, is_array($data) ? $data : []);
     }
 
     public function isSuccessful(): bool
@@ -97,26 +81,129 @@ class CompletePurchaseResponse extends AbstractResponse
     }
 
     /**
-     * The POST is attacker-reachable; the hash is not. Where the two describe
-     * the same field they have to agree, otherwise a shopper could settle a
-     * 1412.00 order by posting back a 1.00 one.
+     * The callback's hash_key is the only part of this POST we can trust: it is
+     * encrypted with the appSecret and names the invoice and amount it settles.
+     *
+     * When the caller passes transactionId (its own invoice id) and/or amount,
+     * those are authoritative and the hash has to match them exactly; posted
+     * values are never used in their place. Without them we fall back to the
+     * legacy behaviour and bind the hash to the posted fields.
      *
      * @param  array<string, mixed>  $data
      */
-    private function amountMatchesHash(array $data): bool
+    private function verifyHash(RequestInterface $request, array $data): bool
     {
-        foreach (['total' => 'total', 'order_id' => 'order_id'] as $posted => $hashed) {
+        if (! $request instanceof CompletePurchaseRequest) {
+            return false;
+        }
 
-            if (! isset($data[$posted]) || (string) $data[$posted] === '') {
-                continue;
-            }
+        $hashKey = $data['hash_key'] ?? null;
+        $appSecret = $request->getAppSecret();
 
-            if ((string) $data[$posted] !== (string) $this->callback[$hashed]) {
+        if (! is_string($hashKey) || $hashKey === '' || ! is_string($appSecret) || $appSecret === '') {
+            return false;
+        }
+
+        $expectedInvoiceId = $request->getTransactionId();
+        $callerSuppliedInvoice = $expectedInvoiceId !== null && (string) $expectedInvoiceId !== '';
+
+        if (! $callerSuppliedInvoice) {
+            $expectedInvoiceId = $data['invoice_id'] ?? null;
+
+            if (! is_scalar($expectedInvoiceId) || (string) $expectedInvoiceId === '') {
                 return false;
             }
+        }
 
+        try {
+            $this->callback = Helper::validateCallbackHashKey($hashKey, $appSecret, (string) $expectedInvoiceId);
+        } catch (OmnipaySipayHashValidationException $e) {
+            $this->callback = null;
+
+            return false;
+        }
+
+        if (! $this->fieldsMatchHash($request, $data)) {
+            $this->callback = null;
+
+            return false;
         }
 
         return true;
+    }
+
+    /**
+     * The POST is attacker-reachable; the hash is not. Every hash field the POST
+     * also carries has to agree with it, and a caller-supplied amount has to
+     * equal the hashed total exactly (compared in integer minor units).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function fieldsMatchHash(CompletePurchaseRequest $request, array $data): bool
+    {
+        $hash = (array) $this->callback;
+
+        try {
+            $decimals = $request->getCurrencyDecimalPlaces();
+            $rawAmount = $request->getParameters()['amount'] ?? null;
+            $expectedAmount = $rawAmount !== null && $rawAmount !== '' ? $request->getAmountInteger() : null;
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        $hashTotal = self::toMinorUnits((string) $hash['total'], $decimals);
+
+        if ($hashTotal === null) {
+            return false;
+        }
+
+        if ($expectedAmount !== null) {
+            if ($hashTotal !== $expectedAmount) {
+                return false;
+            }
+        } elseif ($this->isPosted($data, 'total')) {
+            if (self::toMinorUnits((string) $data['total'], $decimals) !== $hashTotal) {
+                return false;
+            }
+        }
+
+        // With a caller-supplied invoice id the hash was already checked against
+        // it; a posted invoice_id must still not contradict the hash.
+        foreach (['invoice_id', 'order_id', 'currency_code'] as $field) {
+            if ($this->isPosted($data, $field) && (string) $data[$field] !== (string) $hash[$field]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function isPosted(array $data, string $field): bool
+    {
+        return isset($data[$field]) && is_scalar($data[$field]) && (string) $data[$field] !== '';
+    }
+
+    /**
+     * "1412.00" => 141200 (for 2 decimals). Null for anything that is not a
+     * plain non-negative decimal with at most $decimals fraction digits.
+     */
+    private static function toMinorUnits(string $value, int $decimals): ?int
+    {
+        $value = trim($value);
+
+        if (! preg_match('/^(\d+)(?:\.(\d+))?$/', $value, $m)) {
+            return null;
+        }
+
+        $fraction = rtrim($m[2] ?? '', '0');
+
+        if (strlen($fraction) > $decimals) {
+            return null;
+        }
+
+        return (int) ($m[1] . str_pad($fraction, $decimals, '0'));
     }
 }
