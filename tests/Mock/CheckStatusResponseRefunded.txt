@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Server: nginx
+Content-Type: application/json
+Content-Length: 718
+
+{"transaction_status":"REFUNDED","order_id":"63931046657184002596401","transaction_id":"def4f312-4c61-4848-8053-408327128ac8","message":"An order has been taken place for this invoice id: INV-20230101-001","reason":"","bank_status_code":"","bank_status_description":"","invoice_id":"INV-20230101-001","total_refunded_amount":1891.73,"product_price":"1891.73","transaction_amount":1891.73,"ref_number":"975495","transaction_type":"Auth","settlement_date":"2026-11-24","md_status":1,"original_bank_error_code":"","original_bank_error_description":"","refunded_amount":"NOT_FOUND","refund_status":"NOT_FOUND","total_refund_requested_amount":1891.73,"installment_number":3,"status_code":100,"status_description":"Success"}

@@ -104,6 +104,19 @@ class Helper
     }
 
     /**
+     * Generate the hash key for the status endpoint (`/api/checkstatus`):
+     * invoice_id|merchant_key, encrypted like every other request. Verified
+     * live against QNBpay (status 100 with this layout, 68 otherwise).
+     */
+    public static function generateCheckStatusHashKey(
+        string $invoiceId,
+        string $merchantKey,
+        string $appSecret
+    ): string {
+        return self::encryptHashData($invoiceId . '|' . $merchantKey, $appSecret);
+    }
+
+    /**
      * Encrypt one hash payload with Sipay's AES-256-CBC scheme and a fresh
      * IV/salt pair.
      */

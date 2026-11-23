@@ -5,6 +5,7 @@ namespace Omnipay\Sipay;
 use Omnipay\Common\AbstractGateway;
 use Omnipay\Common\Message\AbstractRequest;
 use Omnipay\Sipay\Message\BinLookupRequest;
+use Omnipay\Sipay\Message\CheckStatusRequest;
 use Omnipay\Sipay\Message\CompletePurchaseRequest;
 use Omnipay\Sipay\Message\InstallmentRatesRequest;
 use Omnipay\Sipay\Message\PurchaseRequest;
@@ -21,7 +22,6 @@ use Omnipay\Sipay\Traits\PurchaseGettersSetters;
  * @method \Omnipay\Common\Message\RequestInterface authorize(array $options = [])
  * @method \Omnipay\Common\Message\RequestInterface completeAuthorize(array $options = [])
  * @method \Omnipay\Common\Message\RequestInterface capture(array $options = [])
- * @method \Omnipay\Common\Message\RequestInterface fetchTransaction(array $options = [])
  * @method \Omnipay\Common\Message\RequestInterface createCard(array $options = [])
  * @method \Omnipay\Common\Message\RequestInterface updateCard(array $options = [])
  * @method \Omnipay\Common\Message\RequestInterface deleteCard(array $options = [])
@@ -66,6 +66,16 @@ class Gateway extends AbstractGateway
     public function refund(array $options = []): AbstractRequest
     {
         return $this->createRequest(RefundRequest::class, $options);
+    }
+
+    /**
+     * The sale's current state at the provider: transaction status and how
+     * much has been refunded, including refunds the provider's team
+     * completed by hand after answering 101.
+     */
+    public function fetchTransaction(array $options = []): AbstractRequest
+    {
+        return $this->createRequest(CheckStatusRequest::class, $options);
     }
 
     public function binLookup(array $options = []): AbstractRequest
