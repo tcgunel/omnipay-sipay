@@ -46,6 +46,17 @@ class VoidResponse extends AbstractResponse
             && (int) $this->response['status_code'] === 100;
     }
 
+    /**
+     * Status 101: the provider accepted the request but its own team still has
+     * to complete it ("Your refund request created successfully. Our team will
+     * complete the refund process."). Not a failure, and not done yet either.
+     */
+    public function isPending(): bool
+    {
+        return isset($this->response['status_code'])
+            && (int) $this->response['status_code'] === 101;
+    }
+
     public function getMessage(): ?string
     {
         return $this->response['status_description'] ?? null;

@@ -76,4 +76,27 @@ class VoidTest extends TestCase
         $this->assertEquals('0', $response->getCode());
         $this->assertEquals('Cancel failed. Transaction not found.', $response->getMessage());
     }
+
+    /**
+     * QNBpay answers 101 when its team completes the refund by hand: accepted,
+     * so neither a success nor a failure to retry.
+     */
+    public function test_void_response_pending()
+    {
+        $httpResponse = $this->getMockHttpResponse('VoidResponsePending.txt');
+
+        $response = new VoidResponse($this->getMockRequest(), $httpResponse);
+
+        $this->assertFalse($response->isSuccessful());
+        $this->assertTrue($response->isPending());
+        $this->assertEquals('101', $response->getCode());
+        $this->assertEquals('Your refund request created successfully. Our team will complete the refund process.', $response->getMessage());
+    }
+
+    public function test_void_response_success_is_not_pending()
+    {
+        $response = new VoidResponse($this->getMockRequest(), $this->getMockHttpResponse('VoidResponseSuccess.txt'));
+
+        $this->assertFalse($response->isPending());
+    }
 }
